@@ -1,5 +1,5 @@
 ---
-version: '3.1'
+version: '3.7'
 
 services:
   zookeeper1:
@@ -14,9 +14,27 @@ services:
       KAFKA_OPTS: -javaagent:/opt/jolokia/jolokia-jvm-1.6.2-agent.jar=host=*
     networks:
       - development-net
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo ruok | nc localhost 2181 | grep imok"]
+      start_period: 30s
     volumes:
       - log4j-dir-zookeeper:/var/log/kafka
       - ./config/zookeeper/log4j.properties.template:/etc/confluent/docker/log4j.properties.template
+
+  zookeeper-metricbeat:
+    image: docker.elastic.co/beats/metricbeat:7.6.1
+    hostname: zookeeper-metricbeat
+    container_name: zookeeper-metricbeat
+    depends_on:
+      - zookeeper1
+    environment:
+      - KIBANA_HOST=kibana:5601
+      - ELASTICSEARCH_HOST=http://elasticsearch:9200
+      - data.jolokia.url= http://zookeeper:8080/jolokia
+    networks:
+      - development-net
+    volumes:
+      - ./config/metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
 
   broker1:
     image: osodevops/kafka
@@ -41,10 +59,56 @@ services:
       KAFKA_OPTS: -javaagent:/opt/jolokia/jolokia-jvm-1.6.2-agent.jar=host=*
     networks:
       - development-net
+    healthcheck:
+      test: ["CMD", "nc", "127.0.0.1", "9092"]
+      start_period: 30s
     volumes:
       - log4j-dir-broker:/var/log/kafka
       - ./config/kafka/log4j.properties.template:/etc/confluent/docker/log4j.properties.template
       - ./config/kafka/server.properties:/etc/kafka/server.properties
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.1
+    hostname: elasticsearch
+    container_name: elasticsearch
+    restart: on-failure
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - IPC_LOCK
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - node.name=elasticsearch
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    networks:
+      - development-net
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.6.1
+    restart: on-failure
+    ports:
+      - "5601:5601"
+    environment:
+      xpack.security.enabled: "false"
+    depends_on:
+      - elasticsearch
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5601"]
+      start_period: 30s
+    networks:
+      - development-net
 
 networks:
   development-net:
@@ -53,3 +117,4 @@ networks:
 volumes:
   log4j-dir-broker:
   log4j-dir-zookeeper:
+  elasticsearch-data:
