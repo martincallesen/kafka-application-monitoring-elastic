@@ -1,0 +1,7 @@
+# Metrics collected from a Kafka producer using Jolokia
+- module: kafka
+  metricsets:
+    - producer
+  period: 10s
+  hosts: ["${data.jolokia.url}"]
+

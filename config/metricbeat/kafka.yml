@@ -1,0 +1,7 @@
+# Metrics collected from a Kafka broker using Jolokia
+- module: kafka
+  metricsets:
+    - broker
+  period: 10s
+  hosts: ["${data.jolokia.url}"]
+
