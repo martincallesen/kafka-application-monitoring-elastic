@@ -3,7 +3,7 @@ version: '3.7'
 
 services:
   zookeeper1:
-    image: osodevops/zookeeper
+    image: martincallesen/zookeeper
     hostname: zookeeper1
     container_name: zookeeper1
     ports:
@@ -23,10 +23,12 @@ services:
 
   zookeeper-metricbeat:
     image: docker.elastic.co/beats/metricbeat:7.6.1
+    command: metricbeat -e -strict.perms=false
     hostname: zookeeper-metricbeat
     container_name: zookeeper-metricbeat
     depends_on:
       - zookeeper1
+      - kibana
     environment:
       - KIBANA_HOST=kibana:5601
       - ELASTICSEARCH_HOST=http://elasticsearch:9200
@@ -37,7 +39,7 @@ services:
       - ./config/metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
 
   broker1:
-    image: osodevops/kafka
+    image: martincallesen/kafka
     hostname: broker1
     container_name: broker1
     depends_on:
@@ -48,10 +50,10 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper1:2181'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker1:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker1:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker1:29092
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker1:9092
       CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper1:2181
       CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
       CONFLUENT_METRICS_ENABLE: 'false'
@@ -67,19 +69,8 @@ services:
       - ./config/kafka/log4j.properties.template:/etc/confluent/docker/log4j.properties.template
       - ./config/kafka/server.properties:/etc/kafka/server.properties
 
-  schema-registry:
-    image: confluentinc/cp-schema-registry:5.0.0
-    links:
-      - broker1
-      - zookeeper1
-    ports:
-      - "8081:8081"
-    environment:
-      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: "zookeeper:2181"
-      SCHEMA_REGISTRY_HOST_NAME: schema-registry
-
   control-center:
-    image: confluentinc/cp-schema-registry:5.3.1
+    image: confluentinc/cp-enterprise-control-center:5.5.1
     hostname: control-center
     container_name: control-center
     depends_on:
@@ -88,8 +79,8 @@ services:
     ports:
       - "9021:9021"
     environment:
-      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker:9092'
-      CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker1:9092'
+      CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper1:2181'
       CONTROL_CENTER_CONNECT_CLUSTER: 'connect:8083'
       CONTROL_CENTER_KSQL_KSQLDB1_URL: "http://ksqldb-server:8088"
       CONTROL_CENTER_CONFLUENT_CONTROLCENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
@@ -104,48 +95,50 @@ services:
     networks:
       - development-net
 
-#  elasticsearch:
-#    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.1
-#    hostname: elasticsearch
-#    container_name: elasticsearch
-#    restart: on-failure
-#    ports:
-#      - "9200:9200"
-#      - "9300:9300"
-#    volumes:
-#      - elasticsearch-data:/usr/share/elasticsearch/data
-#    ulimits:
-#      memlock:
-#        soft: -1
-#        hard: -1
-#      nofile:
-#        soft: 65536
-#        hard: 65536
-#    cap_add:
-#      - IPC_LOCK
-#    environment:
-#      - discovery.type=single-node
-#      - xpack.security.enabled=false
-#      - node.name=elasticsearch
-#      - bootstrap.memory_lock=true
-#      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-#    networks:
-#      - development-net
-#
-#  kibana:
-#    image: docker.elastic.co/kibana/kibana:7.6.1
-#    restart: on-failure
-#    ports:
-#      - "5601:5601"
-#    environment:
-#      xpack.security.enabled: "false"
-#    depends_on:
-#      - elasticsearch
-#    healthcheck:
-#      test: ["CMD", "curl", "-f", "http://localhost:5601"]
-#      start_period: 30s
-#    networks:
-#      - development-net
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.1
+    hostname: elasticsearch
+    container_name: elasticsearch
+    restart: on-failure
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - IPC_LOCK
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - node.name=elasticsearch
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    networks:
+      - development-net
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.6.1
+    hostname: kibana
+    container_name: kibana
+    restart: on-failure
+    ports:
+      - "5601:5601"
+    environment:
+      xpack.security.enabled: "false"
+    depends_on:
+      - elasticsearch
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5601"]
+      start_period: 30s
+    networks:
+      - development-net
 
 networks:
   development-net:
