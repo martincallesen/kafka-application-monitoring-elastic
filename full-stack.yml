@@ -22,18 +22,18 @@ services:
       - log4j-dir-zookeeper:/var/log/kafka
       - ./config/log4j/log4j.properties.template:/etc/confluent/docker/log4j.properties.template
 
-  zookeeper-metricbeat:
+  zookeeper1-metricbeat:
     image: docker.elastic.co/beats/metricbeat:7.6.1
     command: metricbeat -e -strict.perms=false
-    hostname: zookeeper-metricbeat
-    container_name: zookeeper-metricbeat
+    hostname: zookeeper1-metricbeat
+    container_name: zookeeper1-metricbeat
     depends_on:
       - zookeeper1
       - kibana
     environment:
       - KIBANA_HOST=kibana:5601
       - ELASTICSEARCH_HOST=http://elasticsearch:9200
-      - data.jolokia.url= http://zookeeper:8778/jolokia
+      - data.jolokia.url= http://zookeeper1:8778/jolokia
     networks:
       - development-net
     volumes:
@@ -69,6 +69,23 @@ services:
       - log4j-dir-broker:/var/log/kafka
       - ./config/log4j/log4j.properties.template:/etc/confluent/docker/log4j.properties.template
       - ./config/kafka/server.properties:/etc/kafka/server.properties
+
+  broker1-metricbeat:
+    image: docker.elastic.co/beats/metricbeat:7.6.1
+    command: metricbeat -e -strict.perms=false
+    hostname: broker1-metricbeat
+    container_name: broker1-metricbeat
+    depends_on:
+      - broker1
+      - kibana
+    environment:
+      - KIBANA_HOST=kibana:5601
+      - ELASTICSEARCH_HOST=http://elasticsearch:9200
+      - data.jolokia.url= http://broker1:8778/jolokia
+    networks:
+      - development-net
+    volumes:
+      - ./config/metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
 
   control-center:
     image: confluentinc/cp-enterprise-control-center:5.5.1
