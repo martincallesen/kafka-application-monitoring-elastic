@@ -8,7 +8,7 @@ services:
     container_name: zookeeper1
     ports:
       - "2181:2181"
-      - "8778:8778"
+      - "8771:8778"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -33,11 +33,12 @@ services:
     environment:
       - KIBANA_HOST=kibana:5601
       - ELASTICSEARCH_HOST=http://elasticsearch:9200
-      - data.jolokia.url= http://zookeeper1:8778/jolokia
+      - data.jolokia.url= http://zookeeper1:8771/jolokia
     networks:
       - development-net
     volumes:
       - ./config/metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
+      - ./config/metricbeat/kafka.yml:/usr/share/metricbeat/modules.d/kafka.yml
 
   zookeeper1-filebeat:
     image: docker.elastic.co/beats/filebeat:7.4.1
@@ -64,6 +65,7 @@ services:
       - zookeeper1
     ports:
       - "9092:9092"
+      - "8772:8778"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper1:2181'
@@ -98,11 +100,12 @@ services:
     environment:
       - KIBANA_HOST=kibana:5601
       - ELASTICSEARCH_HOST=http://elasticsearch:9200
-      - data.jolokia.url= http://broker1:8778/jolokia
+      - data.jolokia.url= http://broker1:8772/jolokia
     networks:
       - development-net
     volumes:
       - ./config/metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
+      - ./config/metricbeat/kafka.yml:/usr/share/metricbeat/modules.d/kafka.yml
 
   broker1-filebeat:
     image: docker.elastic.co/beats/filebeat:7.4.1

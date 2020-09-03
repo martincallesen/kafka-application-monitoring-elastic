@@ -27,44 +27,18 @@ filebeat.inputs:
   paths:
     - /var/filebeat/APP.*.log
     - /var/log/kafka/json-server.log
-    - /var/log/kafka/zookeeper-json-server.log
-    #- c:\programdata\elasticsearch\logs\*
-
-  # Exclude lines. A list of regular expressions to match. It drops the lines that are
-  # matching any regular expression from the list.
-  #exclude_lines: ['^DBG']
-
-  # Include lines. A list of regular expressions to match. It exports the lines that are
-  # matching any regular expression from the list.
-  #include_lines: ['^ERR', '^WARN']
-
-  # Exclude files. A list of regular expressions to match. Filebeat drops the files that
-  # are matching any regular expression from the list. By default, no files are dropped.
-  #exclude_files: ['.gz$']
-
-  # Optional additional fields. These fields can be freely picked
-  # to add additional information to the crawled log files for filtering
-
   json.keys_under_root: true
 
-  #  level: debug
-  #  review: 1
-
-  ### Multiline options
-
-  # Multiline can be used for log messages spanning multiple lines. This is common
-  # for Java Stack Traces or C-Line Continuation
-
-  # The regexp Pattern that has to be matched. The example pattern matches all lines starting with [
-  #multiline.pattern: ^\[
-
-  # Defines if the pattern set under pattern should be negated or not. Default is false.
-  #multiline.negate: false
-
-  # Match can be set to "after" or "before". It is used to define if lines should be append to a pattern
-  # that was (not) matched before or after or as long as a pattern is not matched based on negate.
-  # Note: After is the equivalent to previous and before is the equivalent to to next in Logstash
-  #multiline.match: after
+  #======================= Logging from filebeat itself=========================
+  logging:
+    to_files: true
+    json: false
+    level: debug
+    files:
+      path: /usr/share/filebeat/logs/
+      name: filebeat.log
+      keepfiles: 7
+      permissions: 0644
 
 
 #============================= Filebeat modules ===============================
@@ -74,7 +48,6 @@ filebeat.config.modules:
   path: ${path.config}/filebeat.yml
 
   # Set to true to enable config reloading
-  # BEC: Does not seem to work in OCP
   reload.enabled: false
 
   # Period on which files under path should be checked for changes
@@ -171,16 +144,6 @@ output.elasticsearch:
 output.logstash:
   # The Logstash hosts
   enabled: false
-  # hosts: ["sf160sv00494.res.bec.dk:${LOGSTASH_PORT:?You need to set the LOGSTASH_PORT environment variable}", "sf160sv00493.res.bec.dk:${LOGSTASH_PORT:?You need to set the LOGSTASH_PORT environment variable}"]
-  # loadbalance: false
-  # worker: 2
-    # ssl:
-    # enabled: true
-    # certificate_authorities: ["${path.config}/certificates/sf160sv00493.res.bec.dk.cer", "${path.config}/certificates/sf160sv00494.res.bec.dk.cer"]
-    # verification_mode: full
-    # supported_protocols: [TLSv1.2]
-    # supported_protocols: [TLSv1.0, TLSv1.1, TLSv1.2]
-    # renegotiation: freely
 
 #----------------------------- Logstash output --------------------------------
 output.file:
