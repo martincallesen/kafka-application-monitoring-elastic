@@ -8,6 +8,7 @@ services:
     container_name: zookeeper1
     ports:
       - "2181:2181"
+      - "8778:8778"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -19,7 +20,7 @@ services:
       start_period: 30s
     volumes:
       - log4j-dir-zookeeper:/var/log/kafka
-      - ./config/zookeeper/log4j.properties.template:/etc/confluent/docker/log4j.properties.template
+      - ./config/log4j/log4j.properties.template:/etc/confluent/docker/log4j.properties.template
 
   zookeeper-metricbeat:
     image: docker.elastic.co/beats/metricbeat:7.6.1
@@ -32,7 +33,7 @@ services:
     environment:
       - KIBANA_HOST=kibana:5601
       - ELASTICSEARCH_HOST=http://elasticsearch:9200
-      - data.jolokia.url= http://zookeeper:8080/jolokia
+      - data.jolokia.url= http://zookeeper:8778/jolokia
     networks:
       - development-net
     volumes:
@@ -66,7 +67,7 @@ services:
       start_period: 30s
     volumes:
       - log4j-dir-broker:/var/log/kafka
-      - ./config/kafka/log4j.properties.template:/etc/confluent/docker/log4j.properties.template
+      - ./config/log4j/log4j.properties.template:/etc/confluent/docker/log4j.properties.template
       - ./config/kafka/server.properties:/etc/kafka/server.properties
 
   control-center:
