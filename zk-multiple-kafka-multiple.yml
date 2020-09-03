@@ -1,0 +1,376 @@
+---
+version: '3.7'
+
+services:
+  zookeeper1:
+    image: martincallesen/zookeeper
+    hostname: zookeeper1
+    container_name: zookeeper1
+    ports:
+      - "2181:2181"
+      - "8771:8778"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888 server.2=zookeeper2:2888:3888 server.3=zookeeper3:2888:3888
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      KAFKA_OPTS: -javaagent:/opt/jolokia/jolokia-jvm-1.6.2-agent.jar=host=*
+    networks:
+      - development-net
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo ruok | nc localhost 2181 | grep imok"]
+      start_period: 30s
+    volumes:
+      - log4j-dir-zookeeper1:/var/log/kafka
+      - ./config/log4j/log4j.properties.template:/etc/confluent/docker/log4j.properties.template
+
+  zookeeper1-metricbeat:
+    image: docker.elastic.co/beats/metricbeat:7.6.1
+    command: metricbeat -e -strict.perms=false
+    hostname: zookeeper1-metricbeat
+    container_name: zookeeper1-metricbeat
+    depends_on:
+      - zookeeper1
+    environment:
+      - KIBANA_HOST=kibana:5601
+      - ELASTICSEARCH_HOST=http://elasticsearch:9200
+      - data.jolokia.url= http://zookeeper1:8771/jolokia
+    networks:
+      - development-net
+    volumes:
+      - ./config/metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
+
+  zookeeper1-filebeat:
+    image: docker.elastic.co/beats/filebeat:7.4.1
+    command: filebeat -e -strict.perms=false
+    hostname: zookeeper1-filebeat
+    container_name: zookeeper1-filebeat
+    depends_on:
+      - zookeeper1
+    environment:
+      - KIBANA_HOST=kibana:5601
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+    networks:
+      - development-net
+    volumes:
+      - log4j-dir-zookeeper1:/var/log/kafka
+      - ./config/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+
+  zookeeper2:
+    image: martincallesen/zookeeper
+    hostname: zookeeper2
+    container_name: zookeeper2
+    ports:
+      - "2182:2182"
+      - "8772:8778"
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888 server.2=zookeeper2:2888:3888 server.3=zookeeper3:2888:3888
+      ZOOKEEPER_CLIENT_PORT: 2182
+      ZOOKEEPER_TICK_TIME: 2000
+      KAFKA_OPTS: -javaagent:/opt/jolokia/jolokia-jvm-1.6.2-agent.jar=host=*
+    networks:
+      - development-net
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo ruok | nc localhost 2182 | grep imok"]
+      start_period: 30s
+    volumes:
+      - log4j-dir-zookeeper2:/var/log/kafka
+      - ./config/log4j/log4j.properties.template:/etc/confluent/docker/log4j.properties.template
+
+  zookeeper2-metricbeat:
+    image: docker.elastic.co/beats/metricbeat:7.6.1
+    command: metricbeat -e -strict.perms=false
+    hostname: zookeeper2-metricbeat
+    container_name: zookeeper2-metricbeat
+    depends_on:
+      - zookeeper2
+    environment:
+      - KIBANA_HOST=kibana:5601
+      - ELASTICSEARCH_HOST=http://elasticsearch:9200
+      - data.jolokia.url= http://zookeeper2:8772/jolokia
+    networks:
+      - development-net
+    volumes:
+      - ./config/metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
+
+  zookeeper2-filebeat:
+    image: docker.elastic.co/beats/filebeat:7.4.1
+    command: filebeat -e -strict.perms=false
+    hostname: zookeeper2-filebeat
+    container_name: zookeeper2-filebeat
+    depends_on:
+      - zookeeper2
+    environment:
+      - KIBANA_HOST=kibana:5601
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+    networks:
+      - development-net
+    volumes:
+      - log4j-dir-zookeeper2:/var/log/kafka
+      - ./config/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+
+  zookeeper3:
+    image: martincallesen/zookeeper
+    hostname: zookeeper3
+    container_name: zookeeper3
+    ports:
+      - "2183:2183"
+      - "8773:8778"
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888 server.2=zookeeper2:2888:3888 server.3=zookeeper3:2888:3888
+      ZOOKEEPER_CLIENT_PORT: 2183
+      ZOOKEEPER_TICK_TIME: 2000
+      KAFKA_OPTS: -javaagent:/opt/jolokia/jolokia-jvm-1.6.2-agent.jar=host=*
+    networks:
+      - development-net
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo ruok | nc localhost 2183 | grep imok"]
+      start_period: 30s
+    volumes:
+      - log4j-dir-zookeeper3:/var/log/kafka
+      - ./config/log4j/log4j.properties.template:/etc/confluent/docker/log4j.properties.template
+
+  zookeeper3-metricbeat:
+    image: docker.elastic.co/beats/metricbeat:7.6.1
+    command: metricbeat -e -strict.perms=false
+    hostname: zookeeper3-metricbeat
+    container_name: zookeeper3-metricbeat
+    depends_on:
+      - zookeeper3
+    environment:
+      - KIBANA_HOST=kibana:5601
+      - ELASTICSEARCH_HOST=http://elasticsearch:9200
+      - data.jolokia.url= http://zookeeper3:8773/jolokia
+    networks:
+      - development-net
+    volumes:
+      - ./config/metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
+
+  zookeeper3-filebeat:
+    image: docker.elastic.co/beats/filebeat:7.4.1
+    command: filebeat -e -strict.perms=false
+    hostname: zookeeper3-filebeat
+    container_name: zookeeper3-filebeat
+    depends_on:
+      - zookeeper3
+    environment:
+      - KIBANA_HOST=kibana:5601
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+    networks:
+      - development-net
+    volumes:
+      - log4j-dir-zookeeper3:/var/log/kafka
+      - ./config/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+
+  broker1:
+    image: martincallesen/kafka
+    hostname: broker1
+    container_name: broker1
+    depends_on:
+      - zookeeper1
+      - zookeeper2
+      - zookeeper3
+    ports:
+      - "9092:9092"
+      - "8774:8778"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper1:2181,zookeeper2:2182,zookeeper3:2183'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker1:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker1:9092
+      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper1:2181
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: 'false'
+      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+      KAFKA_OPTS: -javaagent:/opt/jolokia/jolokia-jvm-1.6.2-agent.jar=host=*
+    networks:
+      - development-net
+    healthcheck:
+      test: ["CMD", "nc", "127.0.0.1", "9092"]
+      start_period: 30s
+    volumes:
+      - log4j-dir-broker1:/var/log/kafka
+      - ./config/log4j/log4j.properties.template:/etc/confluent/docker/log4j.properties.template
+      - ./config/kafka/server.properties:/etc/kafka/server.properties
+
+  broker1-metricbeat:
+    image: docker.elastic.co/beats/metricbeat:7.6.1
+    command: metricbeat -e -strict.perms=false
+    hostname: broker1-metricbeat
+    container_name: broker1-metricbeat
+    depends_on:
+      - broker1
+    environment:
+      - KIBANA_HOST=kibana:5601
+      - ELASTICSEARCH_HOST=http://elasticsearch:9200
+      - data.jolokia.url= http://broker1:8774/jolokia
+    networks:
+      - development-net
+    volumes:
+      - ./config/metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
+
+  broker1-filebeat:
+    image: docker.elastic.co/beats/filebeat:7.4.1
+    command: filebeat -e -strict.perms=false
+    hostname: broker1-filebeat
+    container_name: broker1-filebeat
+    depends_on:
+      - broker1
+    environment:
+      - KIBANA_HOST=kibana:5601
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+    networks:
+      - development-net
+    volumes:
+      - log4j-dir-broker1:/var/log/kafka
+      - ./config/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+
+  broker2:
+    image: martincallesen/kafka
+    hostname: broker2
+    container_name: broker2
+    depends_on:
+      - zookeeper1
+      - zookeeper2
+      - zookeeper3
+    ports:
+      - "9093:9093"
+      - "8775:8778"
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper1:2181,zookeeper2:2182,zookeeper3:2183'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker2:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker2:9093
+      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper1:2181
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: 'false'
+      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+      KAFKA_OPTS: -javaagent:/opt/jolokia/jolokia-jvm-1.6.2-agent.jar=host=*
+    networks:
+      - development-net
+    healthcheck:
+      test: ["CMD", "nc", "127.0.0.1", "9093"]
+      start_period: 30s
+    volumes:
+      - log4j-dir-broker2:/var/log/kafka
+      - ./config/log4j/log4j.properties.template:/etc/confluent/docker/log4j.properties.template
+      - ./config/kafka/server.properties:/etc/kafka/server.properties
+
+  broker2-metricbeat:
+    image: docker.elastic.co/beats/metricbeat:7.6.1
+    command: metricbeat -e -strict.perms=false
+    hostname: broker2-metricbeat
+    container_name: broker2-metricbeat
+    depends_on:
+      - broker2
+    environment:
+      - KIBANA_HOST=kibana:5601
+      - ELASTICSEARCH_HOST=http://elasticsearch:9200
+      - data.jolokia.url= http://broker2:8775/jolokia
+    networks:
+      - development-net
+    volumes:
+      - ./config/metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
+
+  broker2-filebeat:
+    image: docker.elastic.co/beats/filebeat:7.4.1
+    command: filebeat -e -strict.perms=false
+    hostname: broker2-filebeat
+    container_name: broker2-filebeat
+    depends_on:
+      - broker2
+    environment:
+      - KIBANA_HOST=kibana:5601
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+    networks:
+      - development-net
+    volumes:
+      - log4j-dir-broker2:/var/log/kafka
+      - ./config/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+
+  broker3:
+    image: martincallesen/kafka
+    hostname: broker3
+    container_name: broker3
+    depends_on:
+      - zookeeper1
+      - zookeeper2
+      - zookeeper3
+    ports:
+      - "9094:9094"
+      - "8776:8778"
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper1:2181,zookeeper2:2182,zookeeper3:2183'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker3:9094
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker3:9094
+      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper1:2181
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: 'false'
+      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+      KAFKA_OPTS: -javaagent:/opt/jolokia/jolokia-jvm-1.6.2-agent.jar=host=*
+    networks:
+      - development-net
+    healthcheck:
+      test: ["CMD", "nc", "127.0.0.1", "9094"]
+      start_period: 30s
+    volumes:
+      - log4j-dir-broker3:/var/log/kafka
+      - ./config/log4j/log4j.properties.template:/etc/confluent/docker/log4j.properties.template
+      - ./config/kafka/server.properties:/etc/kafka/server.properties
+
+  broker3-metricbeat:
+    image: docker.elastic.co/beats/metricbeat:7.6.1
+    command: metricbeat -e -strict.perms=false
+    hostname: broker3-metricbeat
+    container_name: broker3-metricbeat
+    depends_on:
+      - broker3
+    environment:
+      - KIBANA_HOST=kibana:5601
+      - ELASTICSEARCH_HOST=http://elasticsearch:9200
+      - data.jolokia.url= http://broker3:8776/jolokia
+    networks:
+      - development-net
+    volumes:
+      - ./config/metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
+
+  broker3-filebeat:
+    image: docker.elastic.co/beats/filebeat:7.4.1
+    command: filebeat -e -strict.perms=false
+    hostname: broker3-filebeat
+    container_name: broker3-filebeat
+    depends_on:
+      - broker3
+    environment:
+      - KIBANA_HOST=kibana:5601
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+    networks:
+      - development-net
+    volumes:
+      - log4j-dir-broker3:/var/log/kafka
+      - ./config/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+
+networks:
+  development-net:
+    driver: bridge
+
+volumes:
+  log4j-dir-broker1:
+  log4j-dir-broker2:
+  log4j-dir-broker3:
+  log4j-dir-zookeeper1:
+  log4j-dir-zookeeper2:
+  log4j-dir-zookeeper3:
+  elasticsearch-data:
