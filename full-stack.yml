@@ -19,7 +19,7 @@ services:
       test: ["CMD", "bash", "-c", "echo ruok | nc localhost 2181 | grep imok"]
       start_period: 30s
     volumes:
-      - log4j-dir-zookeeper:/var/log/kafka
+      - log4j-dir-zookeeper1:/var/log/kafka
       - ./config/log4j/log4j.properties.template:/etc/confluent/docker/log4j.properties.template
 
   zookeeper1-metricbeat:
@@ -38,6 +38,23 @@ services:
       - development-net
     volumes:
       - ./config/metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
+
+  zookeeper1-filebeat:
+    image: docker.elastic.co/beats/filebeat:7.4.1
+    command: filebeat -e -strict.perms=false
+    hostname: zookeeper1-filebeat
+    container_name: zookeeper1-filebeat
+    depends_on:
+      - zookeeper1
+      - kibana
+    environment:
+      - KIBANA_HOST=kibana:5601
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+    networks:
+      - development-net
+    volumes:
+      - log4j-dir-zookeeper1:/var/log/kafka
+      - ./config/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
 
   broker1:
     image: martincallesen/kafka
@@ -164,5 +181,5 @@ networks:
 
 volumes:
   log4j-dir-broker:
-  log4j-dir-zookeeper:
+  log4j-dir-zookeeper1:
   elasticsearch-data:
