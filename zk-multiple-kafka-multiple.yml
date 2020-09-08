@@ -373,4 +373,3 @@ volumes:
   log4j-dir-zookeeper1:
   log4j-dir-zookeeper2:
   log4j-dir-zookeeper3:
-  elasticsearch-data:
